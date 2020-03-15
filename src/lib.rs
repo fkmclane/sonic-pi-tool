@@ -1,6 +1,7 @@
 extern crate ansi_term;
 extern crate nix;
 extern crate rosc;
+extern crate escaper;
 
 use nix::unistd::execv;
 use std::ffi::CString;
