@@ -47,7 +47,7 @@ pub fn follow_logs() -> Result<(), FollowLogError> {
         Err(_) => return Err(FollowLogError::AddrInUse),
         Ok(s) => s,
     };
-    let mut buffer = [0u8; rosc::decoder::MTU];
+    let mut buffer = [0u8; 65536];
 
     loop {
         match socket.recv_from(&mut buffer) {
