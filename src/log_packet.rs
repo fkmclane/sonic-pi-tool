@@ -36,9 +36,8 @@ where
     F: Fn(&String) -> String,
 {
     msg.args
-        .as_ref()
-        .and_then(|args| args.get(index))
-        .and_then(|e| match *e {
+        .get(index)
+        .and_then(|e| match e {
             OscType::String(ref string) => Some(fmt(string)),
             _ => None,
         })
@@ -98,10 +97,7 @@ struct MultiMessage {
 
 impl MultiMessage {
     pub fn new(msg: OscMessage) -> Option<MultiMessage> {
-        let mut args = match msg.args {
-            Some(a) => a.into_iter(),
-            _ => return None,
-        };
+        let mut args = msg.args.into_iter();
         let (job_id, thread_name, runtime, num_msgs) =
             match (args.next(), args.next(), args.next(), args.next()) {
                 (
