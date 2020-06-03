@@ -2,6 +2,7 @@ extern crate ansi_term;
 extern crate nix;
 extern crate rosc;
 extern crate escaper;
+extern crate dirs;
 
 use nix::unistd::execv;
 use std::ffi::CString;
@@ -88,21 +89,21 @@ pub fn logs() {
 ///
 pub fn start_server() {
     let mut paths = vec![
-        String::from("/Applications/Sonic Pi.app/server/bin/sonic-pi-server.rb"),
+        String::from("/Applications/Sonic Pi.app/Contents/Resources/app/server/ruby/bin/sonic-pi-server.rb"),
         String::from("/Applications/Sonic Pi.app/server/ruby/bin/sonic-pi-server.rb"),
-        String::from("/Applications/Sonic Pi.app/Contents/Resources/server/ruby/bin/sonic-pi-server.rb"),
+        String::from("/Applications/Sonic Pi.app/server/bin/sonic-pi-server.rb"),
         String::from("./app/server/bin/sonic-pi-server.rb"),
-        String::from("/opt/sonic-pi/app/server/bin/sonic-pi-server.rb"),
-        String::from("/usr/lib/sonic-pi/server/bin/sonic-pi-server.rb"),
         String::from("/opt/sonic-pi/app/server/ruby/bin/sonic-pi-server.rb"),
         String::from("/usr/lib/sonic-pi/server/ruby/bin/sonic-pi-server.rb"),
+        String::from("/opt/sonic-pi/app/server/bin/sonic-pi-server.rb"),
+        String::from("/usr/lib/sonic-pi/server/bin/sonic-pi-server.rb"),
     ];
 
     if let Some(home_directory) = dirs::home_dir() {
         let suffixes = vec![
-            String::from("Applications/Sonic Pi.app/server/bin/sonic-pi-server.rb"),
-            String::from("Applications/Sonic Pi.app/server/ruby/bin/sonic-pi-server.rb"),
             String::from("Applications/Sonic Pi.app/Contents/Resources/server/ruby/bin/sonic-pi-server.rb"),
+            String::from("Applications/Sonic Pi.app/server/ruby/bin/sonic-pi-server.rb"),
+            String::from("Applications/Sonic Pi.app/server/bin/sonic-pi-server.rb"),
         ];
 
         for suffix in suffixes.iter() {
