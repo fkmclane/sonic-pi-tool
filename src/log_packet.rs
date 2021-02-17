@@ -1,4 +1,5 @@
 use ansi_term::Colour::{Black, Blue, Green, Purple, Red, Yellow};
+use escaper::decode_html;
 use rosc::{OscMessage, OscPacket, OscType};
 use std::string::ToString;
 
@@ -23,11 +24,11 @@ fn format_log_info(msg: &OscMessage) -> Option<String> {
 }
 
 fn format_error(msg: &OscMessage) -> Option<String> {
-    format_string_arg(msg, 1, |e| format!("Runtime Error: {}\n\n", e))
+    format_string_arg(msg, 1, |e| format!("Runtime Error: {}\n\n", decode_html(&e).unwrap()))
 }
 
 fn format_syntax_error(msg: &OscMessage) -> Option<String> {
-    format_string_arg(msg, 1, |e| format!("Syntax Error: {}\n\n", e))
+    format_string_arg(msg, 1, |e| format!("Syntax Error: {}\n\n", decode_html(&e).unwrap()))
 }
 
 fn format_string_arg<F>(msg: &OscMessage, index: usize, fmt: F) -> Option<String>
