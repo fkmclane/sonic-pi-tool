@@ -12,8 +12,8 @@ name = "sonic-pi-tool"
 path = "src/main.rs"
 
 [dependencies]
-rosc = "~0.1"
-clap = "~2.21"
-nix = "0.7.0"
-ansi_term = "0.9"
-dirs = "2.0"
+rosc = "~0.4"
+clap = "~2.33"
+nix = "~0.19"
+ansi_term = "~0.12"
+dirs = "~3.0"

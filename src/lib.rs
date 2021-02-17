@@ -128,7 +128,7 @@ pub fn start_server() {
                 args.push(CString::new("-u").unwrap());
             }
 
-            execv(&args[0], &args).unwrap_or_else(|_| panic!("Unable to start {}", *p))
+            execv(args[0].as_c_str(), &args.iter().map(|arg| arg.as_c_str()).collect::<Vec<_>>()).unwrap_or_else(|_| panic!("Unable to start {}", *p))
         }
         None => {
             println!("I couldn't find the Sonic Pi server executable :(");
