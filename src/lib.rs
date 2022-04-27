@@ -91,6 +91,7 @@ pub fn start_server() {
         String::from("/Applications/Sonic Pi.app/Contents/Resources/app/server/ruby/bin/sonic-pi-server.rb"),
         String::from("/Applications/Sonic Pi.app/server/bin/sonic-pi-server.rb"),
         String::from("/Applications/Sonic Pi.app/server/ruby/bin/sonic-pi-server.rb"),
+        String::from("/Applications/Sonic Pi.app/Contents/Resources/server/ruby/bin/sonic-pi-server.rb"),
         String::from("./app/server/bin/sonic-pi-server.rb"),
         String::from("/opt/sonic-pi/app/server/bin/sonic-pi-server.rb"),
         String::from("/usr/lib/sonic-pi/server/bin/sonic-pi-server.rb"),
@@ -99,16 +100,36 @@ pub fn start_server() {
     ];
 
     if let Some(home_directory) = dirs::home_dir() {
-        let suffix = "Applications/Sonic Pi.app//server/bin/sonic-pi-server.rb";
-        let home = format!("{}/{}", home_directory.to_str().unwrap(), suffix);
+        let suffixes = vec![
+            String::from("Applications/Sonic Pi.app/server/bin/sonic-pi-server.rb"),
+            String::from("Applications/Sonic Pi.app/server/ruby/bin/sonic-pi-server.rb"),
+            String::from("Applications/Sonic Pi.app/Contents/Resources/server/ruby/bin/sonic-pi-server.rb"),
+        ];
 
-        paths.insert(0, home);
+        for suffix in suffixes.iter() {
+            let home = format!("{}/{}", home_directory.to_str().unwrap(), suffix);
+            paths.insert(0, home);
+        }
     };
 
     match paths.iter().find(|p| Path::new(&p).exists()) {
         Some(p) => {
-            let cmd = &CString::new(p.clone()).unwrap();
-            execv(cmd, &[]).unwrap_or_else(|_| panic!("Unable to start {}", *p))
+            let server = CString::new(p.clone()).unwrap();
+
+            let mut args = vec![server.clone()];
+
+            let ruby = Path::new(&p).parent().unwrap().parent().unwrap().parent().unwrap().join("native/ruby/bin/ruby");
+            if ruby.exists() {
+                args[0] = CString::new(ruby.to_str().unwrap()).unwrap();
+                args.push(CString::new("--enable-frozen-string-literal").unwrap());
+                args.push(CString::new("-E").unwrap());
+                args.push(CString::new("utf-8").unwrap());
+
+                args.push(server);
+                args.push(CString::new("-u").unwrap());
+            }
+
+            execv(&args[0], &args).unwrap_or_else(|_| panic!("Unable to start {}", *p))
         }
         None => {
             println!("I couldn't find the Sonic Pi server executable :(");
