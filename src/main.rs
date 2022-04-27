@@ -1,53 +1,53 @@
 #[macro_use]
 extern crate clap;
-use clap::{App, AppSettings, Arg, SubCommand};
+use clap::{Arg, Command};
 
 extern crate lib;
 
 fn main() {
-    let cli_app = App::new("sonic-pi-tool")
+    let cli_app = Command::new("sonic-pi-tool")
         .author("Louis Pilfold <louis@lpil.uk>")
-        .setting(AppSettings::SubcommandRequiredElseHelp)
-        .setting(AppSettings::ColoredHelp)
+        .subcommand_required(true)
+        .arg_required_else_help(true)
         .version(crate_version!());
 
-    let check = SubCommand::with_name("check")
+    let check = Command::new("check")
         .about("Check if the Sonic Pi server is listening on port 4557");
 
-    let eval = SubCommand::with_name("eval")
+    let eval = Command::new("eval")
         .about("Takes a string of Sonic Pi code and sends it to the server")
         .arg(
-            Arg::with_name("CODE")
+            Arg::new("CODE")
                 .help("A string of Sonic Pi code")
                 .required(true)
                 .index(1),
         );
 
-    let eval_stdin = SubCommand::with_name("eval-stdin")
+    let eval_stdin = Command::new("eval-stdin")
         .about("Reads Sonic Pi code from stdin and sends it to the server");
 
-    let eval_file = SubCommand::with_name("eval-file")
+    let eval_file = Command::new("eval-file")
         .about("Reads Sonic Pi code from a file and sends it to the server")
         .arg(
-            Arg::with_name("PATH")
+            Arg::new("PATH")
                 .help("Path to the file of Sonic Pi code")
                 .required(true)
                 .index(1),
         );
 
     let start_server =
-        SubCommand::with_name("start-server").about("Find and start the Sonic Pi server");
+        Command::new("start-server").about("Find and start the Sonic Pi server");
 
     let stop =
-        SubCommand::with_name("stop").about("Stops all currently playing music on the server");
+        Command::new("stop").about("Stops all currently playing music on the server");
 
     let logs =
-        SubCommand::with_name("logs").about("Print log events emitted by the Sonic Pi server");
+        Command::new("logs").about("Print log events emitted by the Sonic Pi server");
 
-    let record = SubCommand::with_name("record")
+    let record = Command::new("record")
         .about("Record the audio output of a Sonic Pi session")
         .arg(
-            Arg::with_name("PATH")
+            Arg::new("PATH")
                 .help("Absolute path to the output file")
                 .required(true)
                 .index(1),

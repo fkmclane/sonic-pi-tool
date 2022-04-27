@@ -13,7 +13,7 @@ pub fn to_log_string(packet: OscPacket) -> String {
                 "/syntax_error" => format_syntax_error(&msg),
                 _ => None,
             };
-            log.unwrap_or_else(String::new)
+            log.unwrap_or_default()
         }
         OscPacket::Bundle(_bundle) => String::new(),
     }
@@ -24,11 +24,11 @@ fn format_log_info(msg: &OscMessage) -> Option<String> {
 }
 
 fn format_error(msg: &OscMessage) -> Option<String> {
-    format_string_arg(msg, 1, |e| format!("Runtime Error: {}\n\n", decode_html(&e).unwrap()))
+    format_string_arg(msg, 1, |e| format!("Runtime Error: {}\n\n", decode_html(e).unwrap()))
 }
 
 fn format_syntax_error(msg: &OscMessage) -> Option<String> {
-    format_string_arg(msg, 1, |e| format!("Syntax Error: {}\n\n", decode_html(&e).unwrap()))
+    format_string_arg(msg, 1, |e| format!("Syntax Error: {}\n\n", decode_html(e).unwrap()))
 }
 
 fn format_string_arg<F>(msg: &OscMessage, index: usize, fmt: F) -> Option<String>
@@ -36,9 +36,8 @@ where
     F: Fn(&String) -> String,
 {
     msg.args
-        .as_ref()
-        .and_then(|args| args.get(index))
-        .and_then(|e| match *e {
+        .get(index)
+        .and_then(|e| match e {
             OscType::String(ref string) => Some(fmt(string)),
             _ => None,
         })
@@ -98,10 +97,7 @@ struct MultiMessage {
 
 impl MultiMessage {
     pub fn new(msg: OscMessage) -> Option<MultiMessage> {
-        let mut args = match msg.args {
-            Some(a) => a.into_iter(),
-            _ => return None,
-        };
+        let mut args = msg.args.into_iter();
         let (job_id, thread_name, runtime, num_msgs) =
             match (args.next(), args.next(), args.next(), args.next()) {
                 (
@@ -122,8 +118,8 @@ impl MultiMessage {
 
         let multi = MultiMessage {
             job_id,
-            thread_name: thread_name.to_string(),
-            runtime: runtime.to_string(),
+            thread_name,
+            runtime,
             messages,
         };
         Some(multi)
@@ -131,7 +127,7 @@ impl MultiMessage {
 
     pub fn format(&self) -> String {
         let mut buffer = String::new();
-        buffer.push_str(&format!("[Run {}, Time {}]", self.job_id, self.runtime));
+        buffer.push_str(&format!("[Run {}, Thread {}, Time {}]", self.job_id, self.thread_name, self.runtime));
 
         match self.messages.len() {
             0 => (),
@@ -148,7 +144,7 @@ impl MultiMessage {
                 self.messages[n - 1].write_str(&mut buffer);
             }
         }
-        buffer.push_str("\n");
+        buffer.push('\n');
         buffer
     }
 }
@@ -166,7 +162,7 @@ mod tests {
         let num_msgs = OscType::Int(0);
         let msg = OscPacket::Message(OscMessage {
             addr: "/multi_message".to_string(),
-            args: Some(vec![job_id, thread_name, runtime, num_msgs]),
+            args: vec![job_id, thread_name, runtime, num_msgs],
         });
         let expected = "[Run 2, Time 1293.1]\n".to_string();
         let output = to_log_string(msg);
@@ -183,7 +179,7 @@ mod tests {
         let num_msgs = OscType::Int(0);
         let msg = OscPacket::Message(OscMessage {
             addr: "/log/multi_message".to_string(),
-            args: Some(vec![job_id, thread_name, runtime, num_msgs]),
+            args: vec![job_id, thread_name, runtime, num_msgs],
         });
         let expected = "[Run 2, Time 1293.1]\n".to_string();
         let output = to_log_string(msg);
@@ -202,14 +198,14 @@ mod tests {
         let msg1_info = OscType::String("synth :beep".to_string());
         let msg = OscPacket::Message(OscMessage {
             addr: "/multi_message".to_string(),
-            args: Some(vec![
+            args: vec![
                 job_id,
                 thread_name,
                 runtime,
                 num_msgs,
                 msg1_type,
                 msg1_info,
-            ]),
+            ],
         });
         let expected = format!(
             r#"[Run 2, Time 1293.1]
@@ -236,7 +232,7 @@ mod tests {
         let msg2_info = OscType::String("synth :boop".to_string());
         let msg = OscPacket::Message(OscMessage {
             addr: "/multi_message".to_string(),
-            args: Some(vec![
+            args: vec![
                 job_id,
                 thread_name,
                 runtime,
@@ -245,7 +241,7 @@ mod tests {
                 msg1_info,
                 msg2_type,
                 msg2_info,
-            ]),
+            ],
         });
         let expected = format!(
             r#"[Run 2, Time 1293.1]
@@ -266,7 +262,7 @@ mod tests {
     fn info_test() {
         let msg = OscPacket::Message(OscMessage {
             addr: "/info".to_string(),
-            args: Some(vec![OscType::Int(1), OscType::String("Hello!".to_string())]),
+            args: vec![OscType::Int(1), OscType::String("Hello!".to_string())],
         });
         assert_eq!("=> Hello!\n", to_log_string(msg));
     }
@@ -275,7 +271,7 @@ mod tests {
     fn log_info_test() {
         let msg = OscPacket::Message(OscMessage {
             addr: "/log/info".to_string(),
-            args: Some(vec![OscType::Int(1), OscType::String("Hello!".to_string())]),
+            args: vec![OscType::Int(1), OscType::String("Hello!".to_string())],
         });
         assert_eq!("=> Hello!\n", to_log_string(msg));
     }
@@ -291,12 +287,12 @@ lang/core.rb:2863:in `block in in_thread&#39;"#
             .to_string();
         let msg = OscPacket::Message(OscMessage {
             addr: "/error".to_string(),
-            args: Some(vec![
+            args: vec![
                 OscType::Int(24),
                 OscType::String(error_txt),
                 OscType::String(backtrace),
                 OscType::Int(1),
-            ]),
+            ],
         });
         let expected = r#"Runtime Error: []
 Thread death +--&gt; :live_loop_no_sleep_loop
@@ -311,11 +307,11 @@ Thread death +--&gt; :live_loop_no_sleep_loop
         let error_txt = "a.rb:1: syntax error, unexpected end-of-input".to_string();
         let msg = OscPacket::Message(OscMessage {
             addr: "/syntax_error".to_string(),
-            args: Some(vec![
+            args: vec![
                 OscType::Int(24),
                 OscType::String(error_txt),
                 OscType::Int(1),
-            ]),
+            ],
         });
         let expected =
             "Syntax Error: a.rb:1: syntax error, unexpected end-of-input\n\n".to_string();

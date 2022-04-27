@@ -1,5 +1,4 @@
 use super::log_packet;
-use rosc;
 use rosc::{encoder, OscMessage, OscPacket, OscType};
 use std::net;
 use std::net::UdpSocket;
@@ -23,7 +22,7 @@ pub fn run_code(source: String) {
 
     let msg = &OscPacket::Message(OscMessage {
         addr: "/run-code".to_string(),
-        args: Some(vec![client_name, osc_source]),
+        args: vec![client_name, osc_source],
     });
     let msg_buf = encoder::encode(msg).unwrap();
     send(&msg_buf);
@@ -36,7 +35,7 @@ pub fn stop_all_jobs() {
 
     let msg = &OscPacket::Message(OscMessage {
         addr: "/stop-all-jobs".to_string(),
-        args: Some(vec![client_name]),
+        args: vec![client_name],
     });
     let msg_buf = encoder::encode(msg).unwrap();
     send(&msg_buf);
@@ -52,8 +51,8 @@ pub fn follow_logs() -> Result<(), FollowLogError> {
     loop {
         match socket.recv_from(&mut buffer) {
             Ok((size, _addr)) => {
-                let packet = rosc::decoder::decode(&buffer[..size]).unwrap();
-                let log = log_packet::to_log_string(packet);
+                let packet = rosc::decoder::decode_udp(&buffer[..size]).unwrap();
+                let log = log_packet::to_log_string(packet.1);
                 println!("{}", log);
             }
             Err(e) => {
@@ -68,7 +67,7 @@ pub fn start_recording() {
 
     let msg = &OscPacket::Message(OscMessage {
         addr: "/start-recording".to_string(),
-        args: Some(vec![client_name]),
+        args: vec![client_name],
     });
     let msg_buf = encoder::encode(msg).unwrap();
     send(&msg_buf);
@@ -77,7 +76,7 @@ pub fn start_recording() {
 pub fn stop_and_save_recording(path: String) {
     let stop = &OscPacket::Message(OscMessage {
         addr: "/stop-recording".to_string(),
-        args: Some(vec![OscType::String("SONIC_PI_TOOL".to_string())]),
+        args: vec![OscType::String("SONIC_PI_TOOL".to_string())],
     });
     let stop_buf = encoder::encode(stop).unwrap();
     send(&stop_buf);
@@ -85,10 +84,10 @@ pub fn stop_and_save_recording(path: String) {
     let output_file = OscType::String(path);
     let save = &OscPacket::Message(OscMessage {
         addr: "/save-recording".to_string(),
-        args: Some(vec![
+        args: vec![
             OscType::String("SONIC_PI_TOOL".to_string()),
             output_file,
-        ]),
+        ],
     });
     let save_buf = encoder::encode(save).unwrap();
     send(&save_buf);
